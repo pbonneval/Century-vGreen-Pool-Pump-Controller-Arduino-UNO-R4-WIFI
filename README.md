@@ -160,18 +160,35 @@ Configure:
 
 ## 🔌 Hardware
 
-### Controller + Interface
-
+### Controller + RS-485 Interface
 ![UNO R4](images/unor4.png)
 ![RS485 Shield](images/serialshield.png)
 
-### Pump Interface
+---
 
-![Pump Wiring](images/pump485.png)
-![TTL Adapter](images/ttlto485.png)
+### 🔗 RS-485 Wiring (Pump Communication)
+
+![RS485 Wiring](images/wiring.png)
+
+**Connections:**
+
+| Controller | Pump / RS-485 |
+|----------|----------------|
+| A / D+   | A              |
+| B / D-   | B              |
+| GND      | GND (if available) |
+
+📌 **Notes:**
+- Ensure A/B lines are not swapped  
+- Some pumps label A/B differently → may require swapping  
+- Use twisted pair wiring for best signal integrity  
+- Keep cable runs as short as practical  
 
 ---
 
+### Pump Interface Reference
+![Pump Wiring](images/pump485.png)
+![TTL Adapter](images/ttlto485.png)
 ## 🧩 Architecture
 
 * Command queue prevents collisions
