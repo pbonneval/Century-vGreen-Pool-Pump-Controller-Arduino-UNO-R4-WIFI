@@ -123,6 +123,8 @@ For best accuracy:
 
 > ⚠️ If used exclusively in AP mode, schedules may gradually shift due to clock drift.
 
+---
+
 ## 🖥️ Web Interface
 
 ### ▶️ Run Control
