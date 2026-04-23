@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Century vGreen Pool Pump Controller
 
 Arduino UNO R4 WiFi based pool pump controller for Century vGreen variable-speed pumps using RS-485 and a custom EPC-style protocol.
@@ -17,3 +18,7 @@ Early repository setup in progress.
 - Freeze protection
 - EEPROM settings persistence
 - Pump telemetry and fault monitoring
+=======
+# Century-vGreen-Pool-Pump-Controller-Arduino-UNO-R4-WIFI
+Arduino UNO R4 WiFi pool pump controller for Century vGreen variable-speed pumps using RS-485 and EPC protocol
+
