@@ -1,8 +1,9 @@
 # Century vGreen Pool Pump Controller
 
-
-
-\
+![Platform](https://img.shields.io/badge/Platform-Arduino%20UNO%20R4%20WiFi-blue)
+![Interface](https://img.shields.io/badge/Interface-RS--485-orange)
+![Protocol](https://img.shields.io/badge/Protocol-Custom%20EPC-critical)
+![Status](https://img.shields.io/badge/Status-Stable-success)
 
 ---
 
@@ -12,7 +13,7 @@
 2. Connect to WiFi: **POOL PUMP**
 3. Open browser:
 
-```
+```text
 http://192.168.4.1
 ```
 
@@ -22,7 +23,7 @@ http://192.168.4.1
 
 ## 🚀 Overview
 
- This project is a **robust, standalone pool pump controller** for my Century / Regal Beloit vGreen 270 variable-speed pump. This controller may be compatible with other model Century / Regal Beloit vGreen variable-speed pumps, **implement at your own risk**.  
+This project is a **robust, standalone pool pump controller** for my Century / Regal Beloit vGreen 270 variable-speed pump. This controller may be compatible with other Century / Regal Beloit vGreen variable-speed pumps, **implement at your own risk**.
 
 Built on the **Arduino UNO R4 WiFi**, the system communicates over **RS-485 using a custom EPC protocol** and provides a **lightweight web-based UI** for full local control.
 
@@ -38,7 +39,7 @@ Designed for **continuous operation**, the controller uses:
 ## 🌐 Device Access & WiFi Modes
 
 > ⚠️ **WiFi Compatibility Note**
-> Arduino UNO R4 WiFi supports **2.4 GHz only** (not 5 GHz)
+> Arduino UNO R4 WiFi supports **2.4 GHz only** and is **not compatible with 5 GHz WiFi**.
 
 ---
 
@@ -49,7 +50,7 @@ Designed for **continuous operation**, the controller uses:
 
 Open:
 
-```
+```text
 http://192.168.4.1
 ```
 
@@ -57,7 +58,8 @@ http://192.168.4.1
 
 * No internet required
 * “No Internet” warning is normal
-* SSID/password configurable in code
+* SSID and password are configurable in code
+* AP mode is useful for direct local access during setup or troubleshooting
 
 ```cpp
 const char* ssid     = "POOL PUMP";
@@ -73,54 +75,61 @@ const char* homeSsid     = "YOUR_HOME_WIFI_SSID";
 const char* homePassword = "YOUR_HOME_WIFI_PASSWORD";
 ```
 
-* IP assigned automatically (DHCP)
-* IP may change over time
+* IP is assigned automatically by your router using DHCP
+* The assigned IP may change after reboot, router restart, or lease renewal
+* For reliable access, it is recommended to manage IP assignment from your router
 
 ---
 
 ### 📌 Recommended: Static IP via Router
 
-Assign a DHCP reservation to keep a consistent IP:
+Assign a DHCP reservation in your router to keep a consistent IP for the controller.
 
 Example:
 
-```
+```text
 192.168.1.50
 ```
+
+This makes it easier to bookmark the controller and avoids having to rediscover its IP after power cycles.
 
 ---
 
 ### 🔁 Mode Behavior
 
-* AP mode always available
-* Home WiFi runs in parallel
-* AP remains fallback
+* AP mode is always available
+* Home WiFi can run in parallel
+* AP mode remains a fallback if home WiFi fails
 
 ---
 
 ### 🕒 Clock & Time Synchronization
 
+The controller uses the onboard RTC for schedules and timekeeping.
+
 #### AP Mode
 
-* No internet → no time sync
-* RTC used only
-* Time may drift
+* No internet access means no NTP time sync
+* The RTC is used by itself
+* Time may drift over long periods
 
 #### Home WiFi Mode
 
-* NTP sync enabled
-* Accurate time maintained
+* NTP time synchronization is available
+* Clock accuracy is maintained when internet-connected WiFi is available
 
 📌 Recommendation:
 
-* Use WiFi for accurate schedules
-* Or manually update clock
+* Use home WiFi for accurate long-term schedule timing
+* If running AP-only for extended periods, periodically verify or update the clock
 
 ---
 
 ## 🖥️ Web Interface
 
 ### ▶️ Run Control
+
+![Run](images/run.png)
 
 * Start / Stop
 * Override modes
@@ -129,6 +138,8 @@ Example:
 ---
 
 ### 📊 Live Telemetry
+
+![Live](images/live.png)
 
 * RPM
 * Watts
@@ -139,6 +150,8 @@ Example:
 
 ### 📅 Scheduling
 
+![Schedules](images/schedules.png)
+
 * 3 schedules
 * Priority-based
 * RTC driven
@@ -147,6 +160,8 @@ Example:
 ---
 
 ### ⚙️ Setup
+
+![Setup](images/setup.png)
 
 * Prime settings
 * Overrides
@@ -158,6 +173,8 @@ Example:
 
 ### ⚠️ Faults
 
+![Faults](images/faults.png)
+
 * Active faults
 * Previous faults
 * Descriptions
@@ -168,13 +185,19 @@ Example:
 
 ### UNO R4 WiFi Controller
 
+![UNO R4](images/unor4.png)
+
 ### RS-485 Shield
 
-* Set switches for UART + RS485\
+* Set switches for UART and RS485
+
+![RS485 Shield](images/serialshield.png)
 
 ---
 
 ### 🔗 RS-485 Wiring
+
+![Wiring](images/wiring.png)
 
 | Controller | Pump |
 | ---------- | ---- |
@@ -185,14 +208,19 @@ Example:
 📌 Notes:
 
 * Swap A/B if no communication
-* Use twisted pair
+* Use twisted pair where practical
 * Keep wires short
+* Verify shield switch settings before testing
 
 ---
 
 ### Pump Interface
 
+![Pump Interface](images/pump485.png)
+
 ### Optional TTL Adapter
+
+![TTL Adapter](images/ttlto485.png)
 
 ---
 
@@ -203,16 +231,16 @@ Example:
 * Ramp engine smooths transitions
 * Keepalive prevents timeout
 * Schedule engine uses RTC
-* Freeze protection monitors temp
-* Watchdog prevents lockups
+* Freeze protection monitors temperature
+* Watchdog helps prevent lockups
 
 ---
 
 ## ❄️ Freeze Protection
 
-* Below setpoint (30 min) → start pump
+* Below setpoint for 30 minutes → start pump
 * Runs at ~1000 RPM
-* Above setpoint (30 min) → stop
+* Above setpoint for 30 minutes → stop
 
 ---
 
@@ -267,13 +295,13 @@ const char* homePassword = "...";
 
 **Direct:**
 
-```
+```text
 http://192.168.4.1
 ```
 
 **Home WiFi:**
 
-```
+```text
 http://<assigned-ip>
 ```
 
@@ -281,7 +309,7 @@ http://<assigned-ip>
 
 ### 4. Configure System
 
-* Set clock
+* Set or verify clock
 * Set schedules
 * Set prime
 * Test pump
@@ -294,55 +322,55 @@ http://<assigned-ip>
 
 * Swap A/B wires
 * Verify RS485 switch settings
-* Confirm Serial1 wiring (pins 0/1)
-* Check pump address (0x15)
+* Confirm Serial1 wiring if using a TTL adapter
+* Check pump address (`0x15`)
 
 ---
 
 ### Cannot Connect to WiFi
 
-* Ensure 2.4 GHz network
+* Ensure the network is 2.4 GHz
 * Try AP mode first
-* Verify credentials
+* Verify credentials in code
 
 ---
 
 ### UI Freezes / Pump Stops
 
-* Avoid rapid commands
-* Controller may be busy
-* Allow time between actions
+* Avoid sending rapid repeated commands
+* Allow the controller time to complete actions
+* Verify communication timing and keepalive behavior
 
 ---
 
 ### Time Incorrect
 
-* AP mode does not sync time
-* Use WiFi for NTP sync
-* Manually update clock
+* AP mode does not sync time from the internet
+* Use home WiFi for NTP synchronization
+* Manually verify or update the clock as needed
 
 ---
 
 ## 📁 Project Structure
 
-```
+```text
 Century-vGreen-Pool-Pump-Controller-Arduino-UNO-R4-WIFI/
-├── .ino
+├── Century-vGreen-Pool-Pump-Controller-Arduino-UNO-R4-WIFI.ino
 ├── README.md
 ├── images/
 ├── docs/
-├── hardware/
+└── hardware/
 ```
 
 ---
 
 ## 🚧 Engineering Notes
 
-* Aux relay tied to pump config
+* Aux relay tied to pump configuration
 * Strict keepalive required
 * UI polling impacts performance
-* Ramp-down sensitive to faults
-* EEPROM + RTC sync optimized
+* Ramp-down can be more fault-sensitive
+* EEPROM and RTC synchronization optimized over time
 
 ---
 
