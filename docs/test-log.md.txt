@@ -1,0 +1,554 @@
+# 🧪 Test Log – Century VGreen Pool Pump Controller
+
+This document tracks testing, failures, debugging steps, and key discoveries during development of the Arduino UNO R4 WiFi pool pump controller.
+
+---
+
+# 📅 Early Development – Initial Bring-Up (RS-485 & Protocol)
+
+## 🎯 Objective
+
+* Establish communication with pump over RS-485
+* Validate EPC protocol behavior
+* Confirm command/response structure
+
+---
+
+## 🔍 Initial Issues
+
+### ❌ No Communication
+
+* Pump did not respond to commands
+* Occasional garbage data observed
+
+### 🧠 Root Cause
+
+* TX/RX lines were reversed between Arduino and RS-485 module
+
+### 🔧 Fix
+
+* Swapped TX/RX wiring
+* Communication established successfully
+
+---
+
+## 🔍 Protocol Validation
+
+### ✅ Observations
+
+* Pump uses **custom EPC protocol (NOT Modbus)**
+* CRC confirmed as:
+
+  * **CRC-16 (0xA001 polynomial)**
+
+---
+
+### 🧪 Verified Commands
+
+**STOP Command**
+
+```id="4l5k5f"
+TX: 15 42 20 51 7C
+RX: 15 42 10 51 68
+```
+
+**SET RPM Command**
+
+```id="7ndm7m"
+TX: 15 44 20 00 40 1F 89 19
+```
+
+---
+
+### 🧠 Findings
+
+* Frame structure:
+
+  * Address + Function + Data + CRC
+* Responses include:
+
+  * ACK / NACK behavior
+
+---
+
+## 🔁 Communication Behavior Discovery
+
+### 🔍 Observations
+
+* Pump stops running when communication stops
+* Sending a **GO / RUN command alone does NOT start the pump**
+
+---
+
+### 🧠 Findings
+
+* Pump requires **continuous valid communication**
+* Timeout occurs at approximately:
+
+  * **~30 seconds**
+* A **valid demand (RPM setpoint)** must be established **before** the pump will run
+* GO/Run command acts as:
+
+  * Enable / maintain run state
+  * NOT a start trigger by itself
+
+---
+
+### 🔧 Required Start Sequence (Discovered Behavior)
+
+1. Send **SET RPM (demand)**
+2. Then send **GO / RUN command**
+3. Continue sending keep-alive commands
+
+---
+
+### 🔧 Action
+
+* Implemented:
+
+  * Keep-alive command loop
+  * Demand-first control logic
+
+---
+
+# 📅 Early Control Testing (Pre-Web UI)
+
+## 🎯 Objective
+
+* Control pump manually via serial commands
+
+---
+
+## 🔍 Observations
+
+### ⚠️ Command Sensitivity
+
+* Some commands require:
+
+  * Repetition
+  * Timing delays
+
+### ⚠️ Startup Behavior
+
+* Pump does not instantly run at commanded RPM
+
+---
+
+## 🧠 Findings
+
+* Pump performs internal startup sequence (**Prime Mode**)
+* Prime must complete before stable operation
+
+---
+
+## 🔧 Design Decision
+
+* All pump starts must:
+
+  * Enter **Prime Mode**
+  * Then transition to target RPM
+
+---
+
+# 📅 Transition to Web UI Control
+
+## 🎯 Objective
+
+* Introduce local web interface for control
+
+---
+
+## 🔍 Initial Issues
+
+### ❌ UI Would Not Fully Load
+
+* Partial page rendering
+* Missing sections and data
+* Browser timeouts
+
+### ❌ Controller Lockups
+
+* Arduino froze during page load
+* Pump communication stopped
+
+---
+
+## 🧠 Findings
+
+* Web server implementation was **blocking**
+* Large HTML payload caused:
+
+  * Execution delays
+  * Serial communication starvation
+
+---
+
+## 🔧 Actions
+
+* Reduced UI complexity
+* Simplified layout
+* Improved request handling
+
+---
+
+# 📅 UI Interaction & Command Handling Issues
+
+## 🔍 Observations
+
+### ❌ Rapid Commands Cause Lockup
+
+* Sending multiple commands quickly results in:
+
+  * Controller freeze
+  * Loss of communication
+
+### ❌ UI Refresh Impact
+
+* Page reload temporarily interrupts communication
+* Can cause missed or delayed commands
+
+---
+
+## 🧠 Findings
+
+* System cannot handle:
+
+  * Back-to-back command execution
+* Blocking code sections delay critical tasks
+
+---
+
+## 🔧 Actions
+
+* Introduced command pacing
+* Transitioned toward non-blocking logic
+* Reduced UI refresh aggressiveness
+
+---
+
+# 📅 Ramp & Power Behavior Testing
+
+## 🎯 Objective
+
+* Prevent faults during RPM transitions
+
+---
+
+## 🔍 Observations
+
+* Large RPM step changes cause:
+
+  * **DC low-voltage faults**
+* Ramp down more problematic than ramp up
+
+---
+
+## 🧠 Findings
+
+* Power instability during rapid deceleration
+* Behavior likely dependent on load conditions
+
+---
+
+## 🔧 Working Parameters
+
+* Step size: **25 RPM**
+* Delay: **250 ms**
+
+⚠️ Testing performed without hydraulic load
+
+---
+
+# 📅 Aux Relay Control Testing
+
+## 🎯 Objective
+
+* Control auxiliary relay via EPC commands
+
+---
+
+## 🔍 Observations
+
+* Relay behavior inconsistent
+* Relay sometimes activates:
+
+  * ~3 minutes after prime ends
+* ON/OFF behavior occasionally appears inverted
+* Commands often require repetition
+
+---
+
+## 🧠 Findings
+
+* Relay control influenced by:
+
+  * Stored pump configuration
+  * RPM thresholds
+  * Internal timing logic
+* Direct commands do not guarantee immediate control
+
+---
+
+## 🔧 Commands Tested
+
+* Write to:
+
+  * Page `0x81`, Address `0x07` (Aux relay control)
+* Followed by:
+
+  * STORE CONFIG command
+
+---
+
+## ⚠️ Issues
+
+* Some writes return:
+
+  * `NACK: Data out of range`
+* Writes more reliable when:
+
+  * Pump is **stopped**
+
+---
+
+# 📅 UI Lockup Root Cause Identified
+
+## 🔍 Observations
+
+* UI loading causes:
+
+  * Pump communication pause
+  * System instability or freeze
+
+---
+
+## 🧠 Findings
+
+* HTTP handling blocks main loop execution
+* Serial communication starved during UI processing
+
+---
+
+## 🔧 Actions
+
+* Reduced UI refresh frequency
+* Minimized dynamic content
+* Avoided polling-heavy design
+
+---
+
+# 📅 Runtime Stability Issue (~28 Minute Failure)
+
+## 🔍 Observations
+
+* System locks up after ~28 minutes:
+
+  * UI inaccessible
+  * Pump communication stops
+
+---
+
+## 🧠 Findings
+
+* Likely causes:
+
+  * Memory exhaustion
+  * Logging overhead
+  * Resource fragmentation
+
+---
+
+## 🔧 Actions
+
+* Removed all logging features
+* Simplified runtime loop
+
+---
+
+# 📅 RTC & Time Handling
+
+## 🔍 Observations
+
+* Time resets after power cycle
+* RTC overwritten incorrectly on boot
+
+---
+
+## 🧠 Findings
+
+* Boot logic forced RTC update from stored values
+
+---
+
+## 🔧 Actions
+
+* Modified behavior:
+
+  * Read RTC on boot
+  * Only update RTC when user saves
+* Planned EEPROM persistence
+
+---
+
+# 📅 Time Sync & DST
+
+## 🔍 Observations
+
+* Time offset by 1 hour (DST issue)
+* Sync not consistent on reboot
+
+---
+
+## 🔧 Actions
+
+* Implemented:
+
+  * Automatic DST adjustment
+  * Time sync on boot
+  * UI-based sync button
+
+---
+
+# 📅 EEPROM & Settings Persistence
+
+## 🔍 Observations
+
+* Settings not retained after reboot
+
+---
+
+## 🔧 Actions
+
+* Began implementing EEPROM storage for:
+
+  * Schedules
+  * Overrides
+  * Clock settings
+
+---
+
+# 📅 Remote Control Attempt (Abandoned)
+
+## 🎯 Objective
+
+* Add cloud-based control via Arduino IoT Cloud
+
+---
+
+## 🔍 Observations
+
+* Required paid plan for variable support
+* Increased complexity significantly
+* Reduced system stability
+
+---
+
+## 🧠 Decision
+
+* ❌ Abandoned cloud integration
+* ✅ Focused on local UI reliability
+
+---
+
+# 📅 UI Finalization & Stability
+
+## 🔍 Observations
+
+* UI stable after reducing load
+* Improved responsiveness
+* Occasional sensitivity to heavy interaction remains
+
+---
+
+## 🔧 Final Layout Structure
+
+1. Header (clock + sync)
+2. Pump controls
+3. Live data
+4. Overrides
+5. Schedules
+6. Setup
+7. Controller status
+8. Fault monitoring
+
+---
+
+# 📊 Key System Behaviors (Critical Knowledge)
+
+## 🔁 Communication
+
+* Pump requires continuous valid commands
+* Timeout ≈ **30 seconds**
+
+---
+
+## ⚡ Startup Behavior
+
+* Pump will NOT start from GO/RUN command alone
+* A valid **RPM demand must be set first**
+* Required sequence:
+
+  1. Set RPM
+  2. Send GO/RUN
+  3. Maintain keep-alive
+
+---
+
+## ⚡ Prime Behavior
+
+* All starts must:
+
+  * Enter **Prime Mode**
+  * Then transition to target RPM
+
+---
+
+## ⛔ Command Handling
+
+* Rapid command execution can:
+
+  * Lock controller
+  * Interrupt communication
+
+---
+
+## 🔌 Aux Relay
+
+* Not purely command-driven
+* Influenced by:
+
+  * Stored configuration
+  * RPM thresholds
+  * Internal logic
+
+---
+
+## 🌐 UI Impact
+
+* Heavy UI activity can:
+
+  * Starve serial communication
+  * Cause instability
+
+---
+
+# 🧭 Future Testing Areas
+
+* Deterministic aux relay control
+* Full-load ramp testing (with plumbing system)
+* Freeze protection validation (30-minute logic)
+* Fault code verification
+* EEPROM reliability and endurance
+
+---
+
+# 🏁 Summary
+
+System status:
+
+* ✅ Stable with local web UI
+* ✅ Reliable communication (with command pacing)
+* ⚠️ Aux relay behavior not fully deterministic
+* ⚠️ Sensitive to blocking operations and UI load
+
+---
