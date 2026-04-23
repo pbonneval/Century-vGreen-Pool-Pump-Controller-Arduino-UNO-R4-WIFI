@@ -9,7 +9,7 @@
 
 ## 🚀 Overview
 
-This project implements a **robust, standalone pool pump controller** for Century / Regal Beloit vGreen variable-speed pumps.
+This project is a **robust, standalone pool pump controller** for my Century / Regal Beloit vGreen 270 variable-speed pump. This controller may be compatible with other model Century / Regal Beloit vGreen 270 variable-speed pumps, **implement at your own risk**.
 
 Built on the **Arduino UNO R4 WiFi**, the system communicates over **RS-485 using a custom EPC protocol** and provides a **lightweight web-based UI** for full local control.
 
