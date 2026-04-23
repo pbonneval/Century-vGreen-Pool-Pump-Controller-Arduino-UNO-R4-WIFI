@@ -7,7 +7,7 @@
 
 ---
 
-Compatibility
+## Compatibility
 
 This project is designed specifically for VGreen 270 models (ECM27SQU / ECM27CU) to ensure proper operation and compatibility.
 
@@ -18,7 +18,9 @@ Documentation
 To help users verify compatibility and better understand the system, the following reference materials are provided:
 
 VGreen 270 Brochure
+
 VGreen 270 User Manual
+
 VGreen 270 Quick Start Guide
 
 These documents can be used to confirm model compatibility and review pump capabilities before implementation.
