@@ -30,8 +30,10 @@ These documents can be used to confirm model compatibility and review pump capab
 ## ⚡ Quick Start
 
 1. Upload the `.ino` to Arduino UNO R4 WiFi
-2. Connect to WiFi: **POOL PUMP**
-3. Open browser:
+2. Remove OEM Controller 
+3. Connect RS-485 on Pump to RS-485 Port on Shield 
+3. Connect to WiFi: **POOL PUMP**
+4. Open browser:
 
 ```text
 http://192.168.4.1
