@@ -220,6 +220,8 @@ The controller uses the onboard RTC for schedules and timekeeping.
 
 ### Optional TTL Adapter
 
+* UNO Pins 0 and 1 to TX and RX
+
 ![TTL Adapter](images/ttlto485.png)
 
 ---
