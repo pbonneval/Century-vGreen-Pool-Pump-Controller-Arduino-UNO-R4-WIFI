@@ -1,15 +1,28 @@
 # Century vGreen Pool Pump Controller
 
-![Platform](https://img.shields.io/badge/Platform-Arduino%20UNO%20R4%20WiFi-blue)
-![Interface](https://img.shields.io/badge/Interface-RS--485-orange)
-![Protocol](https://img.shields.io/badge/Protocol-Custom%20EPC-critical)
-![Status](https://img.shields.io/badge/Status-Stable-success)
+
+
+\
+
+---
+
+## ⚡ Quick Start
+
+1. Upload the `.ino` to Arduino UNO R4 WiFi
+2. Connect to WiFi: **POOL PUMP**
+3. Open browser:
+
+```
+http://192.168.4.1
+```
+
+4. Configure settings and start pump
 
 ---
 
 ## 🚀 Overview
 
-This project is a **robust, standalone pool pump controller** for my Century / Regal Beloit vGreen 270 variable-speed pump. This controller may be compatible with other model Century / Regal Beloit vGreen variable-speed pumps, **implement at your own risk**.
+ This project is a **robust, standalone pool pump controller** for my Century / Regal Beloit vGreen 270 variable-speed pump. This controller may be compatible with other model Century / Regal Beloit vGreen variable-speed pumps, **implement at your own risk**.  
 
 Built on the **Arduino UNO R4 WiFi**, the system communicates over **RS-485 using a custom EPC protocol** and provides a **lightweight web-based UI** for full local control.
 
@@ -25,32 +38,28 @@ Designed for **continuous operation**, the controller uses:
 ## 🌐 Device Access & WiFi Modes
 
 > ⚠️ **WiFi Compatibility Note**
-> The Arduino UNO R4 WiFi supports **2.4 GHz networks only**.
-> It is **not compatible with 5 GHz WiFi networks**.
+> Arduino UNO R4 WiFi supports **2.4 GHz only** (not 5 GHz)
 
 ---
 
 ### 🔵 Access Point Mode (Default)
 
-The controller starts in **Access Point (AP) mode**.
+* **SSID:** `POOL PUMP`
+* **Password:** *(open network by default)*
 
-* **SSID:** `POOL PUMP` *(default — configurable in code)*
-* **Password:** *(blank by default → open network)*
+Open:
 
-Open in browser:
-
-```id="apurl1"
+```
 http://192.168.4.1
 ```
 
 **Notes:**
 
-* Direct connection to controller
 * No internet required
 * “No Internet” warning is normal
-* SSID/password configurable in code:
+* SSID/password configurable in code
 
-```cpp id="apcode"
+```cpp
 const char* ssid     = "POOL PUMP";
 const char* password = "";
 ```
@@ -59,31 +68,23 @@ const char* password = "";
 
 ### 🟢 Home WiFi Mode (Optional)
 
-Controller can connect to your home network:
-
-```cpp id="homewifi"
+```cpp
 const char* homeSsid     = "YOUR_HOME_WIFI_SSID";
 const char* homePassword = "YOUR_HOME_WIFI_PASSWORD";
 ```
 
-**Behavior:**
-
-* IP is assigned automatically (DHCP)
-* IP may change after reboot or router reset
+* IP assigned automatically (DHCP)
+* IP may change over time
 
 ---
 
-### 📌 Recommended: DHCP Reservation
+### 📌 Recommended: Static IP via Router
 
-To keep a consistent IP:
-
-1. Open router settings
-2. Find device in connected devices
-3. Reserve its IP using MAC address
+Assign a DHCP reservation to keep a consistent IP:
 
 Example:
 
-```id="staticip"
+```
 192.168.1.50
 ```
 
@@ -91,37 +92,29 @@ Example:
 
 ### 🔁 Mode Behavior
 
-* AP mode is always available
+* AP mode always available
 * Home WiFi runs in parallel
-* AP remains fallback if home WiFi fails
+* AP remains fallback
 
 ---
 
 ### 🕒 Clock & Time Synchronization
 
-The controller uses the onboard RTC (Real-Time Clock) for scheduling and timekeeping.
+#### AP Mode
 
-#### 🔵 Access Point Mode (AP Only)
-- When operating only in AP mode, the controller **does not have access to internet time sources**
-- The clock will use the **last stored RTC value**
-- Over time, the clock **may drift and become inaccurate**
+* No internet → no time sync
+* RTC used only
+* Time may drift
 
-#### 🟢 Home WiFi Mode
-- When connected to a home WiFi network, the controller will:
-  - Automatically **synchronize time using NTP**
-  - Maintain accurate time for schedules and system operation
+#### Home WiFi Mode
 
-#### 📌 Important Notes
-- Time synchronization occurs **only when connected to WiFi with internet access**
-- After power loss, the RTC will retain time, but may not be perfectly accurate
-- If operating in AP-only mode long-term, periodic clock updates are recommended
+* NTP sync enabled
+* Accurate time maintained
 
-#### ✅ Recommendation
-For best accuracy:
-- Connect the controller to your home WiFi network  
-- Or periodically update the clock via the web UI  
+📌 Recommendation:
 
-> ⚠️ If used exclusively in AP mode, schedules may gradually shift due to clock drift.
+* Use WiFi for accurate schedules
+* Or manually update clock
 
 ---
 
@@ -129,105 +122,85 @@ For best accuracy:
 
 ### ▶️ Run Control
 
-![Run](images/run.png)
-
-* Start / Stop pump
+* Start / Stop
 * Override modes
-* Manual RPM adjustment
+* Manual RPM control
 
 ---
 
 ### 📊 Live Telemetry
 
-![Live](images/live.png)
-
-Displays:
-
-* Pump state
 * RPM
-* Power (watts)
+* Watts
 * Temperature
-* Controller state
+* Pump state
 
 ---
 
 ### 📅 Scheduling
 
-![Schedules](images/schedules.png)
-
 * 3 schedules
-* Priority-based (1 > 2 > 3)
-* RTC-driven
+* Priority-based
+* RTC driven
 * Prime always enforced
 
 ---
 
-### ⚙️ System Setup
-
-![Setup](images/setup.png)
-
-Configure:
+### ⚙️ Setup
 
 * Prime settings
-* Override settings
+* Overrides
 * Freeze protection
-* Aux relay behavior
 * Clock
+* Aux control
 
 ---
 
-### ⚠️ Fault Monitoring
-
-![Faults](images/faults.png)
+### ⚠️ Faults
 
 * Active faults
 * Previous faults
-* Decoded fault descriptions
+* Descriptions
 
 ---
 
 ## 🔌 Hardware
 
-### UNO R4 WIFI Controller
-![UNO R4](images/unor4.png)
+### UNO R4 WiFi Controller
+
 ### RS-485 Shield
--Ensure switches on shield are set for UART and RS485
-![RS485 Shield](images/serialshield.png)
+
+* Set switches for UART + RS485\
 
 ---
 
-### 🔗 RS-485 Wiring - Serial Shield to Pump 
+### 🔗 RS-485 Wiring
 
-![RS485 Wiring](images/wiring.png)
+| Controller | Pump |
+| ---------- | ---- |
+| A / D+     | A    |
+| B / D-     | B    |
+| GND        | GND  |
 
-**Connections:**
+📌 Notes:
 
-| Controller | Pump / RS-485 |
-|----------|----------------|
-| A / D+   | A              |
-| B / D-   | B              |
-| GND      | GND (if available) |
-
-📌 **Notes:**
-- Ensure A/B lines are not swapped  
-- Some pumps label A/B differently → may require swapping  
-- Use twisted pair wiring for best signal integrity  
-- Keep cable runs as short as practical  
+* Swap A/B if no communication
+* Use twisted pair
+* Keep wires short
 
 ---
 
-### Pump Interface Reference
-![Pump Wiring](images/pump485.png)
-### Optional TTL to RS-485 Converter in place of Serial Shield
--Pin 0 and Pin 1 on the UNO for TTL RXD and TXD
--Caution the VCC and GND colors may be reversed
-![TTL Adapter](images/ttlto485.png)
+### Pump Interface
+
+### Optional TTL Adapter
+
+---
+
 ## 🧩 Architecture
 
 * Command queue prevents collisions
-* Start sequence enforces proper startup
-* Prime always runs first
-* Ramp engine prevents faults
+* Prime-first startup always enforced
+* Ramp engine smooths transitions
 * Keepalive prevents timeout
 * Schedule engine uses RTC
 * Freeze protection monitors temp
@@ -237,26 +210,26 @@ Configure:
 
 ## ❄️ Freeze Protection
 
-* Below setpoint for 30 min → start pump
+* Below setpoint (30 min) → start pump
 * Runs at ~1000 RPM
-* Above setpoint for 30 min → stop
+* Above setpoint (30 min) → stop
 
 ---
 
 ## 🔁 Control Behavior
 
-* All starts: **Prime → Run**
+* Start = **Prime → Run**
 * Prime cannot be interrupted
 * Overrides > schedules
 * Schedules > idle
-* STOP blocks restart until schedule change
+* STOP blocks restart
 
 ---
 
 ## 📡 Protocol Notes
 
 * Custom EPC protocol (not Modbus)
-* CRC16 (0xA001 polynomial)
+* CRC16 (0xA001)
 * Pump address: `0x15`
 * Requires continuous communication
 
@@ -269,9 +242,8 @@ https://www.troublefreepool.com/threads/century-regal-vgreen-motor-automation.23
 
 ### 1. Upload Code
 
-* Open `.ino` in Arduino IDE
 * Select UNO R4 WiFi
-* Upload
+* Upload sketch
 
 ---
 
@@ -285,29 +257,21 @@ const char* password = "";
 Optional:
 
 ```cpp
-const char* homeSsid     = "YOUR_HOME_WIFI_SSID";
-const char* homePassword = "YOUR_HOME_WIFI_PASSWORD";
+const char* homeSsid     = "...";
+const char* homePassword = "...";
 ```
 
 ---
 
 ### 3. Connect
 
-#### Direct (Recommended)
+**Direct:**
 
-1. Connect to `POOL PUMP`
-2. Open:
-
-```id="apurl2"
+```
 http://192.168.4.1
 ```
 
----
-
-#### Home Network
-
-1. Find IP in router
-2. Open:
+**Home WiFi:**
 
 ```
 http://<assigned-ip>
@@ -315,20 +279,47 @@ http://<assigned-ip>
 
 ---
 
-### 4. Recommended Network Setup
-
-✔ Set DHCP reservation
-✔ Use fixed IP
-✔ Bookmark controller
-
----
-
-### 5. Configure System
+### 4. Configure System
 
 * Set clock
 * Set schedules
 * Set prime
-* Verify pump control
+* Test pump
+
+---
+
+## 🛠️ Troubleshooting
+
+### No Communication with Pump
+
+* Swap A/B wires
+* Verify RS485 switch settings
+* Confirm Serial1 wiring (pins 0/1)
+* Check pump address (0x15)
+
+---
+
+### Cannot Connect to WiFi
+
+* Ensure 2.4 GHz network
+* Try AP mode first
+* Verify credentials
+
+---
+
+### UI Freezes / Pump Stops
+
+* Avoid rapid commands
+* Controller may be busy
+* Allow time between actions
+
+---
+
+### Time Incorrect
+
+* AP mode does not sync time
+* Use WiFi for NTP sync
+* Manually update clock
 
 ---
 
@@ -351,11 +342,11 @@ Century-vGreen-Pool-Pump-Controller-Arduino-UNO-R4-WIFI/
 * Strict keepalive required
 * UI polling impacts performance
 * Ramp-down sensitive to faults
-* EEPROM + RTC synchronization refined
+* EEPROM + RTC sync optimized
 
 ---
 
-## 📜 Disclaimer
+## ⚠️ Disclaimer
 
-Use at your own risk.
-Verify wiring, safety, and compatibility before deployment.
+This project controls electrical equipment.
+Use caution and verify all wiring before operation.
