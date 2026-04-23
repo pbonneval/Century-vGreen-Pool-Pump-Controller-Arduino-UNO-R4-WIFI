@@ -191,7 +191,7 @@ Configure:
 ### Pump Interface Reference
 ![Pump Wiring](images/pump485.png)
 ### Optional TTL to RS-485 Converter in place of Serial Shield
--Utilizes Pin 0 and Pin 1 on the UNO for RXD and TXD
+-Pin 0 and Pin 1 on the UNO for TTL RXD and TXD
 -Caution the VCC and GND colors may be reversed
 ![TTL Adapter](images/ttlto485.png)
 ## 🧩 Architecture
