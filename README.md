@@ -160,10 +160,10 @@ Configure:
 
 ## 🔌 Hardware
 
-### UNO R4 WIFI Controller + RS-485 Interface
+### UNO R4 WIFI Controller
 ![UNO R4](images/unor4.png)
 ### RS-485 Shield
--Ensure switches on shield are UART and RS485
+-Ensure switches on shield are set for UART and RS485
 ![RS485 Shield](images/serialshield.png)
 
 ---
@@ -191,6 +191,8 @@ Configure:
 ### Pump Interface Reference
 ![Pump Wiring](images/pump485.png)
 ### Optional TTL to RS-485 Converter in place of Serial Shield
+-Utilizes Pin 0 and Pin 1 on the UNO for RXD and TXD
+-Caution the VCC and GND colors may be reversed
 ![TTL Adapter](images/ttlto485.png)
 ## 🧩 Architecture
 
