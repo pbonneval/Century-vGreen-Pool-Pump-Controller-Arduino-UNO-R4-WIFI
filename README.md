@@ -97,6 +97,32 @@ Example:
 
 ---
 
+### 🕒 Clock & Time Synchronization
+
+The controller uses the onboard RTC (Real-Time Clock) for scheduling and timekeeping.
+
+#### 🔵 Access Point Mode (AP Only)
+- When operating only in AP mode, the controller **does not have access to internet time sources**
+- The clock will use the **last stored RTC value**
+- Over time, the clock **may drift and become inaccurate**
+
+#### 🟢 Home WiFi Mode
+- When connected to a home WiFi network, the controller will:
+  - Automatically **synchronize time using NTP**
+  - Maintain accurate time for schedules and system operation
+
+#### 📌 Important Notes
+- Time synchronization occurs **only when connected to WiFi with internet access**
+- After power loss, the RTC will retain time, but may not be perfectly accurate
+- If operating in AP-only mode long-term, periodic clock updates are recommended
+
+#### ✅ Recommendation
+For best accuracy:
+- Connect the controller to your home WiFi network  
+- Or periodically update the clock via the web UI  
+
+> ⚠️ If used exclusively in AP mode, schedules may gradually shift due to clock drift.
+
 ## 🖥️ Web Interface
 
 ### ▶️ Run Control
