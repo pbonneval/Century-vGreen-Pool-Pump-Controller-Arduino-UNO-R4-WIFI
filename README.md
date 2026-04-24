@@ -25,6 +25,22 @@ VGreen 270 Quick Start Guide
 
 These documents can be used to confirm model compatibility and review pump capabilities before implementation.
 
+
+## 🧊 Enclosure
+
+A custom 3D-printable enclosure is included:
+
+Download Enclosure Files
+
+Features:
+
+Snap-fit design (no screws)
+Wall-mount ears
+Designed for UNO R4 + RS-485 shield
+
+Also available on Printables:
+https://www.printables.com/model/1699991-arduino-uno-r4-wifi-case-with-shield
+
 ---
 
 ## ⚡ Quick Start
@@ -39,7 +55,7 @@ These documents can be used to confirm model compatibility and review pump capab
 http://192.168.4.1
 ```
 
-4. Configure settings and start pump
+5. Configure settings and start pump
 
 ---
 
