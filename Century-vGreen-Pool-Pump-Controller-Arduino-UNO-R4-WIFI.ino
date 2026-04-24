@@ -1,10 +1,14 @@
-/* 
+/* VERSION: 1.1 - 2026-04-24 11:35 CT
 ============================================================
-VERSION: 1.0 - 2026-04-21 17:40
 Pool Pump Controller – Arduino UNO R4 WiFi
 ============================================================
 
 CHANGELOG:
+- v1.1:
+  - Added Resume Schedule command/button after STOP during active schedule
+  - STOP now places active schedule into manual hold-off until Resume Schedule or schedule window changes
+  - Run tab Stop button automatically changes to Resume Schedule while schedule hold-off is active
+
 - v1.0:
   - First stable public release
   - Non-blocking control architecture finalized
@@ -134,7 +138,7 @@ IMPORTANT NOTES:
 - Loss of communication for about 30 seconds may stop the pump
 - All starts are prime-first by design
 - Manual RPM updates are only allowed during active runs
-- STOP inhibits auto-restart until the current schedule window changes
+- STOP inhibits auto-restart until Resume Schedule is pressed or the current schedule window changes
 
 ------------------------------------------------------------
 CONFIGURATION:
@@ -388,7 +392,8 @@ enum QueuedCommandType {
   QUEUED_CMD_STATUS,
   QUEUED_CMD_AUX_ON,
   QUEUED_CMD_AUX_OFF,
-  QUEUED_CMD_MANUAL_RPM
+  QUEUED_CMD_MANUAL_RPM,
+  QUEUED_CMD_RESUME_SCHEDULE
 };
 QueuedCommandType queuedCommand = QUEUED_CMD_NONE;
 int manualRequestedRPM = 1800;
@@ -1189,6 +1194,12 @@ bool controllerBusyForNewCommand() {
 }
 
 bool queueOneCommand(QueuedCommandType cmd) {
+  if (cmd == QUEUED_CMD_RESUME_SCHEDULE) {
+    // Resume is lightweight: it only clears schedule hold-off and lets the schedule engine restart if still in-window.
+    queuedCommand = QUEUED_CMD_RESUME_SCHEDULE;
+    return true;
+  }
+
   if (cmd == QUEUED_CMD_STOP) {
     // Emergency-style STOP: always allow it to preempt queued/start/ramp activity.
     queuedCommand = QUEUED_CMD_STOP;
@@ -1678,6 +1689,7 @@ String runOwnerText() {
 }
 
 String runStateText() {
+  if (autoRunInhibited) return "Schedule Hold";
   String owner = runOwnerText();
   switch (pumpRunState) {
     case RUNSTATE_IDLE: return "Idle";
@@ -1751,6 +1763,22 @@ void processPumpCommands() {
 
   QueuedCommandType cmd = queuedCommand;
   queuedCommand = QUEUED_CMD_NONE;
+
+  if (cmd == QUEUED_CMD_RESUME_SCHEDULE) {
+    autoRunInhibited = false;
+    scheduleOwnsPump = false;
+    activeRunMode = ACTIVE_NONE;
+    activeRunStartMillis = 0;
+    activeRunDurationMs = 0;
+    activeScheduleIndex = -1;
+    scheduleRequestedRPM = 0;
+    pendingRunRequest = false;
+    requestedTargetRPM = 0;
+    currentCommandedRPM = 0;
+    clearActiveRPMUpdate();
+    lastPumpReplyText = "Resume Schedule OK - schedule may restart if still active";
+    return;
+  }
 
   if (cmd == QUEUED_CMD_STOP) {
     String msg;
@@ -2098,7 +2126,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:1px solid #bccad9
         <div class='actions'>
           <button onclick='cmd("run_high")'>Run High</button>
           <button onclick='cmd("run_low")'>Run Low</button>
-          <button class='stop' onclick='cmd("stop")'>Stop</button>
+          <button id='stopResumeBtn' class='stop' onclick='stopResume()'>Stop</button>
           <button class='alt' onclick='cmd("status")'>Refresh Status</button>
         </div>
         <div class='hr'></div>
@@ -2112,7 +2140,7 @@ input,select{width:100%;padding:12px;border-radius:12px;border:1px solid #bccad9
             <button onclick='updateRPM()'>Update RPM</button>
           </div>
         </div>
-        <div class='notice' style='margin-top:10px'>Manual RPM update only applies while an active schedule or HIGH/LOW override is running.</div>
+        <div class='notice' style='margin-top:10px'>Manual RPM update only applies while an active schedule or HIGH/LOW override is running. If STOP is pressed during a schedule, this button changes to Resume Schedule.</div>
       </div>
 
       <div class='card'>
@@ -2241,6 +2269,7 @@ function showTab(name,btn){
 }
 async function j(url){const r=await fetch(url,{cache:'no-store'}); return await r.json();}
 async function cmd(act){ await fetch('/cmd?act='+encodeURIComponent(act),{cache:'no-store'}); setTimeout(()=>loadActiveTab(true),150); }
+async function stopResume(){ const b=byId('stopResumeBtn'); const act=(b&&b.dataset.mode==='resume')?'resume_schedule':'stop'; await cmd(act); }
 async function updateRPM(){ const rpm=byId('manualRpm').value||1800; await fetch('/cmd?act=manual_rpm&rpm='+encodeURIComponent(rpm),{cache:'no-store'}); setTimeout(()=>loadActiveTab(true),150); }
 async function saveSetup(ev){ ev.preventDefault(); const qs=new URLSearchParams({primeRPM:byId('primeRPM').value,primeMinutes:byId('primeMinutes').value,highRPM:byId('highRPM').value,highHours:byId('highHours').value,lowRPM:byId('lowRPM').value,lowHours:byId('lowHours').value,freezeEnabled:byId('freezeEnabled').value,freezeTemp:byId('freezeTemp').value,auxEnabled:byId('auxEnabled').value}); await fetch('/save_setup?'+qs.toString(),{cache:'no-store'}); setTimeout(()=>loadActiveTab(true),150); }
 async function saveClock(ev){ ev.preventDefault(); const qs=new URLSearchParams({hour:byId('clkHour').value,minute:byId('clkMinute').value,ampm:byId('clkAmpm').value,month:byId('clkMonth').value,day:byId('clkDay').value,year:byId('clkYear').value}); await fetch('/save_clock?'+qs.toString(),{cache:'no-store'}); setTimeout(()=>loadActiveTab(true),150); }
@@ -2249,6 +2278,11 @@ function fillCommon(d){
   byId('rtc').textContent=d.rtc ?? '--';
   byId('controllerState').textContent=d.controllerState ?? '--';
   byId('replyText').textContent=d.replyText ?? '--';
+  const sr=byId('stopResumeBtn');
+  if(sr){
+    if(d.autoRunInhibited){ sr.textContent='Resume Schedule'; sr.dataset.mode='resume'; sr.classList.remove('stop'); sr.classList.add('alt'); }
+    else { sr.textContent='Stop'; sr.dataset.mode='stop'; sr.classList.add('stop'); sr.classList.remove('alt'); }
+  }
   fillQuick(d);
 }
 async function loadRun(){ const d=await j('/api/live'); fillCommon(d); byId('primeRemaining').textContent=d.primeRemaining; byId('overrideRemaining').textContent=d.overrideRemaining; byId('freezeState').textContent=d.freezeState; byId('runSession').textContent=d.runSession; }
@@ -2382,6 +2416,8 @@ void sendApiLive(WiFiClient &client) {
   jsonStrKV(client, "runSession", formatDurationSeconds(getRunSessionSeconds()));
   jsonIntKV(client, "requestedTargetRPM", requestedTargetRPM);
   jsonIntKV(client, "currentCommandedRPM", currentCommandedRPM);
+  jsonBoolKV(client, "autoRunInhibited", autoRunInhibited);
+  jsonIntKV(client, "activeScheduleIndex", activeScheduleIndex);
   jsonBoolKV(client, "commHealthy", (millis() - lastGoodStatusMillis) < 15000UL, false);
   client.print('}');
 }
@@ -2392,6 +2428,8 @@ void sendApiFaults(WiFiClient &client) {
   jsonStrKV(client, "rtc", rtcDateTimeString());
   jsonStrKV(client, "controllerState", runStateText());
   jsonStrKV(client, "replyText", lastPumpReplyText);
+  jsonBoolKV(client, "autoRunInhibited", autoRunInhibited);
+  jsonIntKV(client, "activeScheduleIndex", activeScheduleIndex);
   jsonStrKV(client, "prevFault", faultCombinedText(lastPrevFaultCodeHex, lastPrevFaultText));
   jsonStrKV(client, "fault1", faultCombinedText(lastFault1CodeHex, lastFault1Text));
   jsonStrKV(client, "fault2", faultCombinedText(lastFault2CodeHex, lastFault2Text));
@@ -2406,6 +2444,8 @@ void sendApiSetup(WiFiClient &client) {
   jsonStrKV(client, "rtc", rtcDateTimeString());
   jsonStrKV(client, "controllerState", runStateText());
   jsonStrKV(client, "replyText", lastPumpReplyText);
+  jsonBoolKV(client, "autoRunInhibited", autoRunInhibited);
+  jsonIntKV(client, "activeScheduleIndex", activeScheduleIndex);
   jsonIntKV(client, "primeRPM", primeRPM);
   jsonIntKV(client, "primeMinutes", primeMinutes);
   jsonIntKV(client, "highRPM", overrideHighRPM);
@@ -2431,14 +2471,16 @@ void sendApiSchedules(WiFiClient &client) {
   jsonStrKV(client, "rtc", rtcDateTimeString());
   jsonStrKV(client, "controllerState", runStateText());
   jsonStrKV(client, "replyText", lastPumpReplyText);
+  jsonBoolKV(client, "autoRunInhibited", autoRunInhibited);
+  jsonIntKV(client, "activeScheduleIndex", activeScheduleIndex);
   client.print(F("\"summaryHtml\":\""));
   String summary = "Active schedule: ";
   if (activeScheduleIndex >= 0) summary += String(activeScheduleIndex + 1);
   else summary += "None";
   summary += "<br>Schedule owner: ";
   summary += scheduleOwnsPump ? "Yes" : "No";
-  summary += "<br>Auto run inhibited: ";
-  summary += autoRunInhibited ? "Yes" : "No";
+  summary += "<br>Schedule hold-off: ";
+  summary += autoRunInhibited ? "Yes - press Resume Schedule to restart" : "No";
   client.print(jsonEscape(summary));
   client.print(F("\",\"schedules\":["));
   for (int i = 0; i < 3; i++) {
@@ -2464,6 +2506,7 @@ void sendApiSchedules(WiFiClient &client) {
 void handleCommandRoute(WiFiClient &client, const String& req) {
   String act = getParam(req, "act");
   if (act == "stop") queueOneCommand(QUEUED_CMD_STOP);
+  else if (act == "resume_schedule") queueOneCommand(QUEUED_CMD_RESUME_SCHEDULE);
   else if (act == "run_high") queueOneCommand(QUEUED_CMD_RUN_HIGH);
   else if (act == "run_low") queueOneCommand(QUEUED_CMD_RUN_LOW);
   else if (act == "status") queueOneCommand(QUEUED_CMD_STATUS);
